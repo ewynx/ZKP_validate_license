@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { Licences } from './Licenses.js';
 
-export { Add };
+export { Licences };

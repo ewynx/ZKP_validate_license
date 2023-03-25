@@ -1,4 +1,4 @@
-import { Add } from './Add';
+import { Licences } from './Licenses';
 import {
   isReady,
   shutdown,
@@ -7,6 +7,7 @@ import {
   PrivateKey,
   PublicKey,
   AccountUpdate,
+  MerkleTree,
 } from 'snarkyjs';
 
 /*
@@ -21,15 +22,18 @@ let proofsEnabled = false;
 describe('Add', () => {
   let deployerAccount: PublicKey,
     deployerKey: PrivateKey,
-    senderAccount: PublicKey,
-    senderKey: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
-    zkApp: Add;
+    zkApp: Licences,
+    authoritiesMerkleTree: MerkleTree,
+    licenseAuthoritiesTree: MerkleTree,
+    auth0: PrivateKey,
+    auth1: PrivateKey,
+    auth2: PrivateKey;
 
   beforeAll(async () => {
     await isReady;
-    if (proofsEnabled) Add.compile();
+    if (proofsEnabled) Licences.compile();
   });
 
   beforeEach(() => {
@@ -37,11 +41,14 @@ describe('Add', () => {
     Mina.setActiveInstance(Local);
     ({ privateKey: deployerKey, publicKey: deployerAccount } =
       Local.testAccounts[0]);
-    ({ privateKey: senderKey, publicKey: senderAccount } =
-      Local.testAccounts[1]);
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
-    zkApp = new Add(zkAppAddress);
+    zkApp = new Licences(zkAppAddress);
+    authoritiesMerkleTree = new MerkleTree(3);
+    licenseAuthoritiesTree = new MerkleTree(8);
+    auth0 = PrivateKey.random();
+    auth1 = PrivateKey.random();
+    auth2 = PrivateKey.random();
   });
 
   afterAll(() => {
@@ -55,6 +62,10 @@ describe('Add', () => {
     const txn = await Mina.transaction(deployerAccount, () => {
       AccountUpdate.fundNewAccount(deployerAccount);
       zkApp.deploy();
+      authoritiesMerkleTree.setLeaf(0n, auth0.toPublicKey().x);
+      authoritiesMerkleTree.setLeaf(1n, auth1.toPublicKey().x);
+      authoritiesMerkleTree.setLeaf(2n, auth2.toPublicKey().x);
+      zkApp.initState(auth0, auth1, auth2, licenseAuthoritiesTree.getRoot());
     });
     await txn.prove();
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
@@ -63,10 +74,12 @@ describe('Add', () => {
 
   it('generates and deploys the `Add` smart contract', async () => {
     await localDeploy();
-    const num = zkApp.num.get();
-    expect(num).toEqual(Field(1));
+    const num = zkApp.nextIndex.get();
+    expect(num).toEqual(Field(0));
   });
 
+  // TODO add tests
+  /*
   it('correctly updates the num state on the `Add` smart contract', async () => {
     await localDeploy();
 
@@ -80,4 +93,5 @@ describe('Add', () => {
     const updatedNum = zkApp.num.get();
     expect(updatedNum).toEqual(Field(3));
   });
+  */
 });
