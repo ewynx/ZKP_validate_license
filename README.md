@@ -1,6 +1,12 @@
-# Mina zkApp: Proj3_private_drivers_license
+# Mina zkApp: ZKP system for validating (international) driver's license
 
-This template uses TypeScript.
+Verify the validity of a driver's license without revealing identity.
+
+The system has 3 authorities that can register licenseAuthorities. Consequently, a license is valid if it is signed by one of the licenseAuthorities.
+
+## Status
+
+Needs testing. 
 
 ## How to build
 
